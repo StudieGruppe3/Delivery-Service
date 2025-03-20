@@ -1,15 +1,22 @@
+﻿using deliveryServiceAPI.WorkerService;  // Korrekt namespace for Worker
+using deliveryServiceAPI.Repository;     // Korrekt namespace for BookingRepository
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// 🔹 Registrer BookingRepository som singleton
+builder.Services.AddSingleton<BookingRepository>();
 
+// 🔹 Registrer Worker Service
+builder.Services.AddHostedService<Worker>();
+
+// 🔹 Tilføj API-controllere
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// 🔹 Konfigurer middleware
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -17,9 +24,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseAuthorization();
-
 app.MapControllers();
-
 app.Run();
