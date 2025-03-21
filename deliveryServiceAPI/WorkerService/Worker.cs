@@ -1,10 +1,12 @@
 ﻿using System;
+using System.IO;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Models;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using deliveryServiceAPI.Repository; // Sørg for, at namespace er korrekt
@@ -45,8 +47,33 @@ namespace deliveryServiceAPI.WorkerService
                 var message = Encoding.UTF8.GetString(body);
                 var booking = JsonSerializer.Deserialize<BookingDTO>(message);
 
+                // Store to repository (if needed)
                 _repository.Put(booking);
                 _logger.LogInformation($"Received and stored booking: {message}");
+
+                // Write to CSV
+                string csvFilePath = "/app/data/DeliveryPlan-20240924.csv"; // Shared Docker volume path
+                bool fileExists = File.Exists(csvFilePath);
+
+                try
+                {
+                    using (var writer = new StreamWriter(csvFilePath, append: true))
+                    {
+                        if (!fileExists)
+                        {
+                            writer.WriteLine("OrderId,CustomerName,Address,Deadline");
+                        }
+
+                        string line = $"{booking.OrderId},{booking.CustomerName},{booking.Address},{booking.Deadline:yyyy-MM-dd HH:mm}";
+                        writer.WriteLine(line);
+                    }
+
+                    _logger.LogInformation($"Booking written to CSV: {booking.OrderId}");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to write booking to CSV");
+                }
             };
 
             _channel.BasicConsume(queue: "shipment_queue",

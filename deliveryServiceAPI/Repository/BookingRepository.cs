@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Models;
 
 namespace deliveryServiceAPI.Repository
 {
@@ -27,11 +28,5 @@ namespace deliveryServiceAPI.Repository
     }
 
     // 🔹 Sørg for, at BookingDTO-klassen findes i det samme namespace
-    public class BookingDTO
-    {
-        public string OrderId { get; set; }
-        public string CustomerName { get; set; }
-        public string Address { get; set; }
-        public DateTime Deadline { get; set; }
-    }
+    
 }
