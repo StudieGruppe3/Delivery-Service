@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 using Models;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using deliveryServiceAPI.Repository; // Sørg for, at namespace er korrekt
+using deliveryServiceAPI.Repository; 
 
 namespace deliveryServiceAPI.WorkerService
 {
@@ -25,16 +25,35 @@ namespace deliveryServiceAPI.WorkerService
             _logger = logger;
             _repository = repository;
 
-            var factory = new ConnectionFactory() { HostName = "localhost" };
-            _connection = factory.CreateConnection();
-            _channel = _connection.CreateModel();
+            var rabbitMqHost = Environment.GetEnvironmentVariable("RABBITMQ_HOST") ?? "localhost";
+            var factory = new ConnectionFactory() { HostName = rabbitMqHost };
 
-            _channel.QueueDeclare(queue: "shipment_queue",
-                                  durable: false,
-                                  exclusive: false,
-                                  autoDelete: false,
-                                  arguments: null);
+            const int maxRetries = 5;
+            for (int i = 0; i < maxRetries; i++)
+            {
+                try
+                {
+                    _connection = factory.CreateConnection();
+                    _channel = _connection.CreateModel();
+
+                    _channel.QueueDeclare(queue: "shipment_queue",
+                        durable: false,
+                        exclusive: false,
+                        autoDelete: false,
+                        arguments: null);
+
+                    _logger.LogInformation("Connected to RabbitMQ!");
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning($"Connection to RabbitMQ failed (attempt {i + 1}/{maxRetries}): {ex.Message}");
+                    Thread.Sleep(2000); // wait 2 sec before retry
+                }
+            }
         }
+
+
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
