@@ -22,5 +22,18 @@ namespace DeliveryService.Controllers
             var bookings = _repository.GetAll();
             return Ok(bookings);
         }
+        
+        [HttpGet("sorted")]
+        public ActionResult<List<BookingDTO>> GetSortedBookings()
+        {
+            var bookings = _repository.GetAll();
+
+            var sorted = bookings
+                .OrderBy(b => b.Deadline)
+                .ToList();
+
+            return Ok(sorted);
+        }
+
     }
 }
